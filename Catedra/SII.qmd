@@ -1,0 +1,123 @@
+------------------------------------------------------------------------
+
+---
+title: "SII"
+author: "MYANEZ8"
+format: pdf
+editor: visual
+---
+
+Pasos para el Análisis Exploratorio de Datos en R Cargar y explorar los datos: Cargar el archivo en R. Inspeccionar la estructura y verificar valores faltantes. Limpieza de datos: Manejar valores faltantes, duplicados o inconsistencias. Convertir tipos de datos si es necesario (por ejemplo, fechas o factores). Resumen estadístico: Estadísticas descriptivas de las variables. Análisis de frecuencias para variables categóricas. Visualizaciones: Gráficos para entender distribuciones y relaciones. Identificar patrones o anomalías. Análisis específicos: Explorar relaciones entre variables (por ejemplo, actividades económicas más comunes, distribución por categorías tributarias, etc.). Script en R para el EDA R
+
+```{r}
+# install.packages("tidyverse")
+#  install.packages("lubridate")
+#  install.packages("ggplot2")
+
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+```
+
+# 1. Cargar los datos
+
+# Asumimos que el archivo es un archivo de texto delimitado por tabulaciones
+
+```{r}
+df_actecos <- read_delim("PUB_NOM_ACTECOS.txt",
+    delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+# 2. Inspeccionar los datos
+
+# Resumen general
+
+```{r}
+str(df_actecos)
+summary(df_actecos)
+```
+
+# Ver las primeras filas
+
+```{r}
+head(df_actecos)
+```
+
+# Verificar valores faltantes
+
+```{r}
+colSums(is.na(df_actecos))
+```
+
+# 3. Limpieza de datos
+
+# Convertir FECHA a formato de fecha
+
+```{r}
+df_actecos$FECHA <- dmy(df_actecos$FECHA)
+```
+
+# Convertir variables categóricas a factores
+
+```{r}
+df_actecos$`AFECTA A IVA`<- as.factor(df_actecos$`AFECTA A IVA`)
+df_actecos$`CATEGORIA TRIBUTARIA`<- as.factor(df_actecos$`CATEGORIA TRIBUTARIA`)
+df_actecos$`CODIGO ACTIVIDAD`<- as.factor(df_actecos$`CODIGO ACTIVIDAD`)
+```
+
+# 4. Resumen estadístico
+
+# Resumen de variables numéricas (si las hay) y categóricas
+
+```{r}
+summary(df_actecos)
+```
+
+# Frecuencia de actividades económicas
+
+```{r}
+actividades_freq <- df_actecos %>% group_by(`DESC. ACTIVIDAD ECONOMICA`) %>% summarise(Conteo = n()) %>% arrange(desc(Conteo)) 
+
+```
+
+```{r}
+head(actividades_freq, 10) # Mostrar las 10 actividades más comunes
+```
+
+# 5. Visualizaciones
+
+# a) Distribución de actividades económicas (top 5)
+
+```{r}
+
+top_5_actividades <- actividades_freq[1:5, ]
+ggplot(top_5_actividades, aes(x = reorder(`DESC. ACTIVIDAD ECONOMICA`, Conteo), y = Conteo)) + geom_bar(stat = "identity", fill = "steelblue") + coord_flip() + labs(title = "Top 5 Actividades Económicas", x = "Actividad", y = "Frecuencia") + theme_minimal()
+```
+
+# b) Distribución de categorías tributarias
+
+```{r}
+ggplot(df_actecos, aes(x = 'CATEGORIA TRIBUTARIA', fill = 'CATEGORIA TRIBUTARIA')) + geom_bar() + labs(title = "Distribución de Categorías Tributarias", x = "Categoría", y = "Frecuencia") + theme_minimal()
+
+
+```
+
+# c) Distribución de afectación a IVA
+
+ggplot(data, aes(x = AFECTA_A_IVA, fill = AFECTA_A_IVA)) + geom_bar() + labs(title = "Afectación a IVA", x = "Afecta a IVA", y = "Frecuencia") + theme_minimal()
+
+# d) Evolución de registros por año
+
+data$Year <- year(data$FECHA) ggplot(data, aes(x = Year)) + geom_histogram(binwidth = 1, fill = "steelblue", color = "black") + labs(title = "Registros por Año", x = "Año", y = "Frecuencia") + theme_minimal()
+
+# 6. Análisis específicos
+
+# Actividades económicas por categoría tributaria
+
+```{r}
+
+```
+
+actividades_por_categoria \<- data %\>% group_by(CATEGORIA_TRIBUTARIA, DESC_ACTIVIDAD_ECONOMICA) %\>% summarise(Conteo = n()) %\>% arrange(CATEGORIA_TRIBUTARIA, desc(Conteo)) head(actividades_por_categoria, 10)
+
+# Relación entre afect
