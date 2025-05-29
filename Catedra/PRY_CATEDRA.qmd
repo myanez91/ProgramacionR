@@ -23,7 +23,11 @@ Esta clasificación ayuda a la organización de datos relacionados con las activ
 
 En resumen, el Código SII de actividad económica es un Código de largo 6 donde:
 
+![](images/clipboard-4268726781.png)
+
 Cada sección le corresponden todas las actividades económicas que empiezan según su división que a su vez cada división se agrupa por grupo, clase y subclase.
+
+![](images/clipboard-4008652487.png)
 
 Por cada seccion se agrupara por clases, 4 primeros caracteres del Codigo Actividad.
 
