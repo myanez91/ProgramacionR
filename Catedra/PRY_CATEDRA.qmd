@@ -1,0 +1,305 @@
+------------------------------------------------------------------------
+
+---
+title: "PRY_CATEDRA"
+author: "MYANEZ8"
+format: pdf
+editor: visual
+---
+
+# Cátedra 1: Informe de Análisis de Datos
+
+## Definición del problema/objetivo de investigación.
+
+### Introducción:
+
+El Servicio de Impuesto internos (SII), entrega la nómina de las personas jurídicas y las **actividades económicas** asociadas a ellas, además de sus direcciones, con esto se puede ver cómo se concentra la industria en distintos sectores, según el código que presenta.
+
+Dicha actividad económica es una adaptación chilena del instituto nacional de estadística (INE) a la clasificación industrial internacional uniforme (CIIU), la cual clasifica las actividades económicas a nivel local, nacional e internacional.
+
+Esta clasificación ayuda a la organización de datos relacionados con las actividades de la industria, como la agricultura, manufactura u otros los denominados Sectores Económicos.
+
+<https://www.ine.gob.cl/docs/default-source/buenas-practicas/clasificaciones/ciiu/clasificador/ciiu4-cl-2012.pdf?sfvrsn=509b707c_3>
+
+En resumen, el Código SII de actividad económica es un Código de largo 6 donde:
+
+Cada sección le corresponden todas las actividades económicas que empiezan según su división que a su vez cada división se agrupa por grupo, clase y subclase.
+
+Por cada seccion se agrupara por clases, 4 primeros caracteres del Codigo Actividad.
+
+Los datos serán recopilados desde el sitio público del Servicio de impuestos internos (SII)
+
+<https://www.sii.cl/sobre_el_sii/nominapersonasjuridicas.html>.
+
+-   [Nómina de actividades económicas de contribuyentes personas jurídicas](https://www.sii.cl/estadisticas/nominas/PUB_NOM_ACTECOS.zip)
+
+Archivo PUB_NOM_ACTECOS.txt
+
+Listado de todos los contribuyentes personas jurídicas, junto al listado de todas las actividades económicas inscritas y vigentes a la fecha de publicación de los datos. 
+
+**(Actualización: mayo 2025)**
+
+**3.574.193 registros**
+
+estructura
+
+-   RUT (cualitativa, nominal): Identificador único del contribuyente.
+
+<!-- -->
+
+-   DV (cualitativa, nominal): Dígito verificador del RUT.
+
+<!-- -->
+
+-   CODIGO ACTIVIDAD (cualitativa, nominal): Código de la actividad económica.
+
+<!-- -->
+
+-   DESC. ACTIVIDAD ECONOMICA (cualitativa, nominal): Descripción de la actividad.
+
+<!-- -->
+
+-   FECHA (cuantitativa, continua): Fecha de registro.
+
+<!-- -->
+
+-   AFECTA A IVA (cualitativa, nominal): Indica si la actividad afecta al IVA ("S" o "N").
+
+<!-- -->
+
+-   CATEGORIA TRIBUTARIA (cualitativa, ordinal): Categoría tributaria (1, 2, ).
+
+    <https://www.sii.cl/estadisticas/nominas/PUB_NOM_DIRECCIONES.zip>
+
+    Listado de todos los contribuyentes personas jurídicas, junto al listado de todas las direcciones registradas (Casa Matriz) vigentes y no vigentes a la fecha de publicación de los datos. 
+
+    **(Actualización: mayo 2025)**
+
+    PUB_NOM_DOMICILIO.txt
+
+    4.682.116 Registros
+
+    Estructura
+
+-   RUT (cualitativa, nominal): Identificador único del contribuyente.
+
+-   DV (cualitativa, nominal): Dígito verificador del RUT.
+
+-   VIGENCIA (cualitativa, nominal): Indica si el domicilio está vigente ("S" o "N").
+
+-   FECHA (cuantitativa, continua): Fecha de registro.
+
+-   TIPO_DIRECCION (cualitativa, nominal): Tipo de dirección ("MATRIZ= DOMICILIO").
+
+-   CALLE (cualitativa, nominal): Nombre de la calle.
+
+-   NUMERO (cualitativa, nominal): Número de la dirección.
+
+-   BLOQUE (cualitativa, nominal): Bloque del domicilio NO OBLIGATORIO
+
+-   DEPARTAMENTO (cualitativa, nominal): Número de departamento NO OBLIGATORIO
+
+-   VILLA_POBLACION (cualitativa, nominal): NO OBLIGATORIO
+
+-   CIUDAD (cualitativa, nominal): Ciudad del domicilio.
+
+-   COMUNA (cualitativa, nominal): Comuna del domicilio.
+
+-   REGION (cualitativa, nominal): Región del domicilio
+
+    Objetivo del análisis:
+
+    Preprocesamiento de datos: limpiar o extrar datos con mucha falta de información (NA). Ver si existen duplicados (\*).
+
+    Ver concentración de la Industria por sectores productivos, como también por georeferenciación.
+
+    Cuáles son los sectores más representados y donde se concentran, esto puede ayudar a los sistemas públicos para ver donde poner mayor énfasis en las decisiones estratégicas Industriales.
+
+    Automatice un dashboard de \>= 3 caracterististicas por base de datos.
+
+### Preprocesamiento de Datos:
+
+El proceso de análisis de datos siempre conlleva procedimientos de limpieza de los valores que implican realizar eliminación o generación de nuevos datos.
+
+Además, R trabaja en forma preferente con datos tabulados (en forma de tablas) y su formato preferido es el dataframe. Los datos tabulados establecen:
+
+-   Cada variable esta almacenada en su propia columna.
+
+-   Cada observación esta almacenada en su propia fila.
+
+-   Cada tabla corresponde a un tipo de observación.
+
+    #### Pasos para el Análisis Exploratorio de Datos en R
+
+Cargar y explorar los datos:
+
+Inspeccionar la estructura y verificar valores faltantes.
+
+Limpieza de datos: Manejar valores faltantes, duplicados o inconsistencias.
+
+Convertir tipos de datos si es necesario (por ejemplo, fechas o factores).
+
+Resumen estadístico: Estadísticas descriptivas de las variables.
+
+Análisis de frecuencias para variables categóricas.
+
+Visualizaciones: Gráficos para entender distribuciones y relaciones.
+
+Identificar patrones o anomalías.
+
+Análisis específicos: Explorar relaciones entre variables (por ejemplo, actividades económicas más comunes, distribución por categorías tributarias, etc.).
+
+Cargar datos del archivo PUB_NOM_ACTECOS.txt
+
+## Instalar y cargar paquetes necesarios
+
+```{r}
+# Instalar si no las tienes:
+# install.packages("tidyvers")
+
+library(tibble)# Proporciona una versión mejorada de los data frames
+library(dplyr) # Herramienta para manipular datos de forma eficiente
+library(readr) # Permite leer y escribir archivos de datos (como CSV, TSV, TXT)
+library(stringr) #Para manipular cadenas de texto de manera consistente y eficiente
+library(purrr) #Facilita la programación funcional, permitiendo iterar sobre listas, vectores o columnas
+
+
+
+```
+
+Carga de datos PUB_NOM_ACTECOS.txt
+
+```{r}
+PUB_NOM_ACTECOS <- read_delim("PUB_NOM_ACTECOS.txt",
+    delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+```
+
+Guardamos el tibble
+
+```{r}
+PUB_NOM_ACTECOS<- as_tibble(PUB_NOM_ACTECOS)
+```
+
+Carga de datos PUB_NOM_DOMICILIO.txt
+
+```{r}
+PUB_NOM_DOMICILIO <- read_delim("PUB_NOM_DOMICILIO.txt",delim = "\t", escape_double = FALSE, trim_ws = TRUE) 
+```
+
+Guardamos el tibble
+
+```{r}
+PUB_NOM_DOMICILIO<- as_tibble(PUB_NOM_DOMICILIO)
+```
+
+Inspeccion de datos
+
+```{r}
+# Resumen PUB_NOM_ACTECOS
+str(PUB_NOM_ACTECOS)
+
+```
+
+Vemos que la fecha viene en formato chr , se transformara en date, para el mejor manejo de fechas
+
+```{r}
+PUB_NOM_ACTECOS2 <- PUB_NOM_ACTECOS %>%
+  mutate(FECHA = as.Date(FECHA, format = "%d-%m-%Y")) #transformamos la fecha chr en date y la guardamos en nuevo frame actualizado
+
+```
+
+```{r}
+str(PUB_NOM_ACTECOS2)
+```
+
+Inspección preliminar
+
+```{r}
+summary(PUB_NOM_ACTECOS2)
+```
+
+Vemos PUB_NOM_ACTECOS visualizamos FECHA fuera de rango "\< a 1993-01-01", cambiamos las variables por 1993-01-01 fecha por defecto del archivo, ademas vemos 133 datos faltantes NA se ingresara fecha por defecto, se escogen datos necesarios para el analisis, RUT, ACTIVIDAD ECONOMICA y FECHA
+
+```{r}
+# Preprocesar FECHA en PUB_NOM_ACTECOS2 SE COMBIERTE CODIGO ACTIVIDAD EN FACTOR y  SE DEJAN datos necesarios para el analisis
+PUB_NOM_ACTECOS2 <- PUB_NOM_ACTECOS2 %>%
+                  mutate(`CODIGO ACTIVIDAD` = as.factor(`CODIGO ACTIVIDAD`))%>% 
+                  mutate(FECHA = if_else(is.na(FECHA) | FECHA < as.Date("1993-01-01"),as.Date("1993-01-01"),FECHA),FECHA_ACT_ECONOMICA = as.factor(FECHA)) %>%
+                  select(RUT,'CODIGO ACTIVIDAD', FECHA_ACT_ECONOMICA)
+```
+
+summary(df_acteco) #inspección preliminar de un data frame
+
+`{r} summary(df_acteco) #inspección preliminar de un data frame}`
+
+Frecuencias
+
+`` {r} actividades_freq <- df_acteco %>% group_by(`DESC. ACTIVIDAD ECONOMICA`) %>% summarise(Conteo = n()) %>% arrange(desc(Conteo))} ``
+
+`` {r} table(df_acteco$`CATEGORIA TRIBUTARIA`)} ``
+
+`` {r} table(df_acteco$`AFECTA A IVA`)} ``
+
+`{r} data$FECHA <- as.Date(data$FECHA) # Asegúrate de que la columna sea de tipo Date data$FECHA[data$FECHA < as.Date("1990-01-01")] <- as.Date("1990-01-01")}`
+
+## Visualizaciones
+
+Distribución de actividades económicas (top 5)
+
+`` {r} top_5_actividades <- actividades_freq[1:5,] ggplot(top_5_actividades, aes(x = reorder(`DESC. ACTIVIDAD ECONOMICA`, Conteo), y = Conteo)) + geom_bar(stat = "identity", fill = "steelblue") + coord_flip() + labs(title = "Top 5 Actividades Económicas", x = "Actividad", y = "Frecuencia")} ``
+
+Distribución de categorías tributarias
+
+`{r} ggplot(df_acteco, aes(x = 'CATEGORIA_TRIBUTARIA', fill = 'CATEGORIA_TRIBUTARIA')) + geom_bar() + labs(title = "Distribución de Categorías Tributarias", x = "Categoría", y = "Frecuencia") + theme_minimal()}`
+
+Evolución de registros por año
+
+`{r} df_acteco$Year <- year(df_acteco$FECHA) ggplot(df_acteco, aes(x = Year)) + geom_histogram(binwidth = 1, fill = "steelblue", color = "black") + labs(title = "Registros por Año", x = "Año", y = "Frecuencia") + theme_minimal()}`
+
+Ahora cargamos el archivo de las sucursales y sus direcciones
+
+`{r} library(readr) df_sucur <- read_delim("PUB_NOM_SUCURSAL.txt",delim = "\t", escape_double = FALSE, trim_ws = TRUE)}`
+
+`{r} head(df_sucur)}`
+
+`{r} summary(df_acteco)}`
+
+Escogemos los valores necesarios en nuevos dataframes resumidos
+
+De: "df_acteco" creamos uno nuevo "df_res_acteco" con solo con RUT CODIGO ACTIVIDAD y FECHA
+
+`{r} df_re_acteco<- df_acteco[, c("RUT", "CODIGO ACTIVIDAD", "FECHA")] rm(df_acteco) #limpia}`
+
+`` {r}  sum(is.na(df_re_acteco$RUT)) sum(is.na(df_re_acteco$`CODIGO ACTIVIDAD`)) sum(is.na(df_re_acteco$FECHA))} ``
+
+`{r} df_re_sucur<- df_sucur[, c("RUT", "VIGENCIA", "FECHA","COMUNA","REGION")] rm(df_sucur) #limpia memoria del dataframe que ya no necesitamos}`
+
+`{r} sum(is.na(df_re_sucur$RUT)) sum(is.na(df_re_sucur$VIGENCIA)) sum(is.na(df_re_sucur$FECHA)) sum(is.na(df_re_sucur$COMUNA)) sum(is.na(df_re_sucur$REGION))}`
+
+Para usar filtros se debe normalizar la data en COMUNA y REGION
+
+Buscamos registros unicos y que no se repitan con otros
+
+COMUNA:
+
+`{r} com_uni <- unique(df_re_sucur$COMUNA) com_uni_ord <- sort(com_uni, decreasing = FALSE) df_com_uni_ord <- data.frame(COMUNA = com_uni_ord) rm(com_uni)#Limpiamos rm(com_uni_ord)#Limpiamos}`
+
+REGION:
+
+`{r} reg_uni <- unique(df_re_sucur$REGION) reg_uni_ord <- sort(reg_uni, decreasing = FALSE) df_reg_uni_ord <- data.frame(REGION = reg_uni_ord) rm(reg_uni) #limpiamos  rm(reg_uni_ord)#limpiamos}`
+
+```{r}
+```
+
+Reemplazar caracteres especiales
+
+`{r} df_reg_uni_ord[df_reg_uni_ord == "Sin Información"] <- "Sin Informacion" df_reg_uni_ord[df_reg_uni_ord == "VI REGION DEL LIBERTADOR GENERAL BERNARDO O'HIGGINS"] <- "VI REGION DEL LIBERTADOR GENERAL BERNARDO O HIGGINS" df_reg_uni_ord[df_reg_uni_ord == "XI REGION AYSEN DEL GENERAL CARLOS IBAÑEZ DEL CAMPO"] <- "XI REGION AYSEN DEL GENERAL CARLOS IBANEZ DEL CAMPO" df_reg_uni_ord[df_reg_uni_ord == "     XVI REGION DE ÑUBLE"] <- "  XVI REGION DE NUBLE"}`
+
+Descripción detallada de los pasos tomados para limpiar y preparar los datos para el análisis utilizando *Tidyverse*.
+
+### Análisis Exploratorio de Datos
+
+Implementación de códigos en R para explorar los datos. Esto puede incluir visualizaciones de datos, medidas de tendencia central, etc. Para los gráficos se debe usar solo *ggplot2.*
+
+Planificación del proyecto de Data Science Incluyendo el marco Teórico, metodologías y entregables.
