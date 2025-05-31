@@ -1,8 +1,6 @@
-------------------------------------------------------------------------
-
 ---
 title: "PRY_CATEDRA"
-author: "MYANEZ8"
+author: "Marcelo Yañez"
 format: pdf
 editor: visual
 ---
@@ -23,13 +21,21 @@ Esta clasificación ayuda a la organización de datos relacionados con las activ
 
 En resumen, el Código SII de actividad económica es un Código de largo 6 donde:
 
+Cada código está representado de la siguiente forma:
+
+-   **Sección:** Letra
+
+-   **División:** 2 dígitos
+
+-   **Grupo:** 3 dígitos
+
+-   **Clase:** 4 dígitos (código final)
+
 ![](images/clipboard-4268726781.png)
 
 Cada sección le corresponden todas las actividades económicas que empiezan según su división que a su vez cada división se agrupa por grupo, clase y subclase.
 
 ![](images/clipboard-4008652487.png)
-
-Por cada seccion se agrupara por clases, 4 primeros caracteres del Codigo Actividad.
 
 Los datos serán recopilados desde el sitio público del Servicio de impuestos internos (SII)
 
@@ -37,136 +43,82 @@ Los datos serán recopilados desde el sitio público del Servicio de impuestos i
 
 -   [Nómina de actividades económicas de contribuyentes personas jurídicas](https://www.sii.cl/estadisticas/nominas/PUB_NOM_ACTECOS.zip)
 
-Archivo PUB_NOM_ACTECOS.txt
+**Archivo PUB_NOM_ACTECOS.txt**
 
 Listado de todos los contribuyentes personas jurídicas, junto al listado de todas las actividades económicas inscritas y vigentes a la fecha de publicación de los datos. 
 
-**(Actualización: mayo 2025)**
+(Actualización: mayo 2025)
 
-**3.574.193 registros**
+3.574.193 registros
 
-estructura
+<https://www.sii.cl/estadisticas/nominas/PUB_NOM_DIRECCIONES.zip>
 
--   RUT (cualitativa, nominal): Identificador único del contribuyente.
+Listado de todos los contribuyentes personas jurídicas, junto al listado de todas las direcciones registradas (Casa Matriz) vigentes y no vigentes a la fecha de publicación de los datos. 
 
-<!-- -->
+(Actualización: mayo 2025)
 
--   DV (cualitativa, nominal): Dígito verificador del RUT.
+**PUB_NOM_DOMICILIO.txt**
 
-<!-- -->
+4.682.116 Registros
 
--   CODIGO ACTIVIDAD (cualitativa, nominal): Código de la actividad económica.
+**Marco Teórico**:
 
-<!-- -->
+El conjunto representa empresas chilenas, proveniente del Servicio de Impuestos internos, con columnas que indican identificadores de empresas (RUT), actividades económicas (CODIGO ACTIVIDAD, "Division, Clase"), y direcciones de estas.
 
--   DESC. ACTIVIDAD ECONOMICA (cualitativa, nominal): Descripción de la actividad.
+**Análisis Exploratorio de Datos (EDA)**: Proceso para resumir características de los datos, visualizar distribuciones e identificar patrones .
 
-<!-- -->
+**Clasificación de Actividades Económicas**: Basada en la Clasificación Industrial Internacional Uniforme (CIIU), donde Division y Clase representan sectores económicos jerárquicos.
 
--   FECHA (cuantitativa, continua): Fecha de registro.
+**Análisis Temporal**: Estudio de tendencias a lo largo del tiempo usando las fechas para entender el crecimiento empresarial o cambios sectoriales.
 
-<!-- -->
+**Análisis Regional**: Investigación de la distribución geográfica para identificar centros económicos.
 
--   AFECTA A IVA (cualitativa, nominal): Indica si la actividad afecta al IVA ("S" o "N").
+### Objetivo del análisis
 
-<!-- -->
+El análisis se basa en la geografía económica y la demografía empresarial, con el objetivo de entender patrones en las actividades económicas.
 
--   CATEGORIA TRIBUTARIA (cualitativa, ordinal): Categoría tributaria (1, 2, ).
+El conjunto de datos CIIU (Clasificación Industrial Internacional Uniforme) para categorizar actividades económicas.
 
-    <https://www.sii.cl/estadisticas/nominas/PUB_NOM_DIRECCIONES.zip>
+### Entregables
 
-    Listado de todos los contribuyentes personas jurídicas, junto al listado de todas las direcciones registradas (Casa Matriz) vigentes y no vigentes a la fecha de publicación de los datos. 
+1.  **Informe en Quarto**: Este documento con código, visualizaciones e interpretaciones.
+2.  **Visualizaciones**: Gráficos de barras y líneas mostrando distribuciones y tendencias de actividades.
+3.  **Principales actividades**: métricas por actividades y región.
+4.  **Dashboard en Shiny** \>= 3 Características. (Proyecto Final)
 
-    **(Actualización: mayo 2025)**
+### Metodologia
 
-    PUB_NOM_DOMICILIO.txt
+#### Técnicas para el Análisis Exploratorio de Datos en R
 
-    4.682.116 Registros
+**Carga de datos**
 
-    Estructura
+**Inspección de datos**
 
--   RUT (cualitativa, nominal): Identificador único del contribuyente.
+**Limpieza de datos**
 
--   DV (cualitativa, nominal): Dígito verificador del RUT.
+**Análisis de distribuciones**
 
--   VIGENCIA (cualitativa, nominal): Indica si el domicilio está vigente ("S" o "N").
+**Detección de valores atípicos**
 
--   FECHA (cuantitativa, continua): Fecha de registro.
+**Análisis de correlaciones**
 
--   TIPO_DIRECCION (cualitativa, nominal): Tipo de dirección ("MATRIZ= DOMICILIO").
+**Transformaciones y normalización**
 
--   CALLE (cualitativa, nominal): Nombre de la calle.
+**Visualización de datos**
 
--   NUMERO (cualitativa, nominal): Número de la dirección.
-
--   BLOQUE (cualitativa, nominal): Bloque del domicilio NO OBLIGATORIO
-
--   DEPARTAMENTO (cualitativa, nominal): Número de departamento NO OBLIGATORIO
-
--   VILLA_POBLACION (cualitativa, nominal): NO OBLIGATORIO
-
--   CIUDAD (cualitativa, nominal): Ciudad del domicilio.
-
--   COMUNA (cualitativa, nominal): Comuna del domicilio.
-
--   REGION (cualitativa, nominal): Región del domicilio
-
-    Objetivo del análisis:
-
-    Preprocesamiento de datos: limpiar o extrar datos con mucha falta de información (NA). Ver si existen duplicados (\*).
-
-    Ver concentración de la Industria por sectores productivos, como también por georeferenciación.
-
-    Cuáles son los sectores más representados y donde se concentran, esto puede ayudar a los sistemas públicos para ver donde poner mayor énfasis en las decisiones estratégicas Industriales.
-
-    Automatice un dashboard de \>= 3 caracterististicas por base de datos.
-
-### Preprocesamiento de Datos:
-
-El proceso de análisis de datos siempre conlleva procedimientos de limpieza de los valores que implican realizar eliminación o generación de nuevos datos.
-
-Además, R trabaja en forma preferente con datos tabulados (en forma de tablas) y su formato preferido es el dataframe. Los datos tabulados establecen:
-
--   Cada variable esta almacenada en su propia columna.
-
--   Cada observación esta almacenada en su propia fila.
-
--   Cada tabla corresponde a un tipo de observación.
-
-    #### Pasos para el Análisis Exploratorio de Datos en R
-
-Cargar y explorar los datos:
-
-Inspeccionar la estructura y verificar valores faltantes.
-
-Limpieza de datos: Manejar valores faltantes, duplicados o inconsistencias.
-
-Convertir tipos de datos si es necesario (por ejemplo, fechas o factores).
-
-Resumen estadístico: Estadísticas descriptivas de las variables.
-
-Análisis de frecuencias para variables categóricas.
-
-Visualizaciones: Gráficos para entender distribuciones y relaciones.
-
-Identificar patrones o anomalías.
-
-Análisis específicos: Explorar relaciones entre variables (por ejemplo, actividades económicas más comunes, distribución por categorías tributarias, etc.).
-
-Cargar datos del archivo PUB_NOM_ACTECOS.txt
-
-## Instalar y cargar paquetes necesarios
+##### Carga de datos
 
 ```{r}
+# Se instalan Paquetes y librerias
 # Instalar si no las tienes:
-# install.packages("tidyvers")
-
+#  install.packages("tidyvers")
 library(tibble)# Proporciona una versión mejorada de los data frames
+library(ggplot2)# graficos
 library(dplyr) # Herramienta para manipular datos de forma eficiente
 library(readr) # Permite leer y escribir archivos de datos (como CSV, TSV, TXT)
 library(stringr) #Para manipular cadenas de texto de manera consistente y eficiente
 library(purrr) #Facilita la programación funcional, permitiendo iterar sobre listas, vectores o columnas
-
+library(knitr) # Para el formato de tablas.
 
 
 ```
@@ -176,7 +128,6 @@ Carga de datos PUB_NOM_ACTECOS.txt
 ```{r}
 PUB_NOM_ACTECOS <- read_delim("PUB_NOM_ACTECOS.txt",
     delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-
 ```
 
 Guardamos el tibble
@@ -188,16 +139,24 @@ PUB_NOM_ACTECOS<- as_tibble(PUB_NOM_ACTECOS)
 Carga de datos PUB_NOM_DOMICILIO.txt
 
 ```{r}
-PUB_NOM_DOMICILIO <- read_delim("PUB_NOM_DOMICILIO.txt",delim = "\t", escape_double = FALSE, trim_ws = TRUE) 
+PUB_NOM_DOMICILIO <- read_delim("PUB_NOM_DOMICILIO.txt",delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 ```
 
 Guardamos el tibble
 
 ```{r}
 PUB_NOM_DOMICILIO<- as_tibble(PUB_NOM_DOMICILIO)
+
 ```
 
-Inspeccion de datos
+##### Inspección de datos
+
+-   PUB_NOM_ACTECOS
+
+```{r}
+# vemos los primeros registros PUB_NOM_ACTECOS
+head(PUB_NOM_ACTECOS)
+```
 
 ```{r}
 # Resumen PUB_NOM_ACTECOS
@@ -205,105 +164,246 @@ str(PUB_NOM_ACTECOS)
 
 ```
 
-Vemos que la fecha viene en formato chr , se transformara en date, para el mejor manejo de fechas
+Estructura PUB_NOM_ACTECOS
+
+RUT (chr): (cualitativa, nominal): Identificador único del contribuyente.
+
+DV (chr): (cualitativa, nominal): Dígito verificador del RUT.
+
+CODIGO ACTIVIDAD (chr): (cualitativa, nominal): Código de la actividad económica.
+
+DESC. ACTIVIDAD ECONOMICA (chr): (cualitativa, nominal): Descripción de la actividad.
+
+FECHA (chr): (cuantitativa, continua): Fecha de registro.
+
+AFECTA A IVA (chr): (cualitativa, nominal): Indica si la actividad afecta al IVA ("S" o "N").
+
+CATEGORIA TRIBUTARIA (chr): (cualitativa, ordinal): Categoría tributaria (1, 2, ).
+
+-   PUB_NOM_DOMICILIO
 
 ```{r}
+head(PUB_NOM_DOMICILIO)
+```
+
+```{r}
+# Resumen PUB_NOM_DOMICILIO
+str(PUB_NOM_DOMICILIO)
+```
+
+Estructura PUB_NOM_DOMICILIO
+
+RUT (chr): (cualitativa, nominal): Identificador único del contribuyente.
+
+DV (chr): (cualitativa, nominal): Dígito verificador del RUT.
+
+VIGENCIA (chr): (cualitativa, nominal): Indica si el domicilio está vigente ("S" o "N").
+
+FECHA (Date): (cuantitativa, continua): Fecha de registro.
+
+TIPO_DIRECCION (chr): (cualitativa, nominal): Tipo de dirección ("MATRIZ= DOMICILIO").
+
+CALLE (chr): (cualitativa, nominal): Nombre de la calle.
+
+NUMERO (chr): (cualitativa, nominal): Número de la dirección.
+
+BLOQUE (chr): (cualitativa, nominal): Bloque del domicilio
+
+DEPARTAMENTO (chr): (cualitativa, nominal): Número de departamento
+
+VILLA_POBLACION (chr): (cualitativa, nominal)
+
+CIUDAD (chr): (cualitativa, nominal): Ciudad del domicilio.
+
+COMUNA (chr): (cualitativa, nominal): Comuna del domicilio.
+
+REGION (chr): (cualitativa, nominal): Región del domicilio
+
+##### Limpieza de datos Transformaciones y normalización
+
+-   PUB_NOM_ACTECOS
+
+FECHA viene en formato (chr), se transformará en Date, para el mejor manejo de fechas.
+
+Se guardara en nuevo frame PUB_NOM_ACTECOS2
+
+```{r}
+# Transformamos la fecha chr en date y la guardamos en nuevo frame actualizado PUB_NOM_ACTECOS2
+
 PUB_NOM_ACTECOS2 <- PUB_NOM_ACTECOS %>%
-  mutate(FECHA = as.Date(FECHA, format = "%d-%m-%Y")) #transformamos la fecha chr en date y la guardamos en nuevo frame actualizado
+  mutate(FECHA = as.Date(FECHA, format = "%d-%m-%Y")) 
 
 ```
 
 ```{r}
+# Resumen PUB_NOM_ACTECOS2
 str(PUB_NOM_ACTECOS2)
 ```
-
-Inspección preliminar
 
 ```{r}
 summary(PUB_NOM_ACTECOS2)
 ```
 
-Vemos PUB_NOM_ACTECOS visualizamos FECHA fuera de rango "\< a 1993-01-01", cambiamos las variables por 1993-01-01 fecha por defecto del archivo, ademas vemos 133 datos faltantes NA se ingresara fecha por defecto, se escogen datos necesarios para el analisis, RUT, ACTIVIDAD ECONOMICA y FECHA
+En PUB_NOM_ACTECOS2 visualizamos FECHA, hay variables fuera de rango "\< a 1993-01-01"
+
+-- Cambiamos estas variables por 1993-01-01 fecha por defecto del archivo
+
+-- Por otra parte, vemos 133 datos faltantes "NA's" se ingresará fecha por defecto mencionada.
+
+-- Para el análisis final se recopilaran solo los campos , RUT, ACTIVIDAD ECONOMICA y FECHA
+
+-- El código de actividad económica lo transformamos en Factor
+
+-- Cambiamos el nombre del campo fecha por FEC_ACT_ECO, que es más representativo
 
 ```{r}
 # Preprocesar FECHA en PUB_NOM_ACTECOS2 SE COMBIERTE CODIGO ACTIVIDAD EN FACTOR y  SE DEJAN datos necesarios para el analisis
 PUB_NOM_ACTECOS2 <- PUB_NOM_ACTECOS2 %>%
                   mutate(`CODIGO ACTIVIDAD` = as.factor(`CODIGO ACTIVIDAD`))%>% 
-                  mutate(FECHA = if_else(is.na(FECHA) | FECHA < as.Date("1993-01-01"),as.Date("1993-01-01"),FECHA),FECHA_ACT_ECONOMICA = as.factor(FECHA)) %>%
-                  select(RUT,'CODIGO ACTIVIDAD', FECHA_ACT_ECONOMICA)
+                  mutate(FECHA = if_else(is.na(FECHA) | FECHA < as.Date("1993-01-01"),as.Date("1993-01-01"),FECHA),FEC_ACT_ECO = FECHA) %>% rename(FEC_DOM = FECHA)%>%
+                  select(RUT,'CODIGO ACTIVIDAD', FEC_ACT_ECO)
 ```
 
-summary(df_acteco) #inspección preliminar de un data frame
-
-`{r} summary(df_acteco) #inspección preliminar de un data frame}`
-
-Frecuencias
-
-`` {r} actividades_freq <- df_acteco %>% group_by(`DESC. ACTIVIDAD ECONOMICA`) %>% summarise(Conteo = n()) %>% arrange(desc(Conteo))} ``
-
-`` {r} table(df_acteco$`CATEGORIA TRIBUTARIA`)} ``
-
-`` {r} table(df_acteco$`AFECTA A IVA`)} ``
-
-`{r} data$FECHA <- as.Date(data$FECHA) # Asegúrate de que la columna sea de tipo Date data$FECHA[data$FECHA < as.Date("1990-01-01")] <- as.Date("1990-01-01")}`
-
-## Visualizaciones
-
-Distribución de actividades económicas (top 5)
-
-`` {r} top_5_actividades <- actividades_freq[1:5,] ggplot(top_5_actividades, aes(x = reorder(`DESC. ACTIVIDAD ECONOMICA`, Conteo), y = Conteo)) + geom_bar(stat = "identity", fill = "steelblue") + coord_flip() + labs(title = "Top 5 Actividades Económicas", x = "Actividad", y = "Frecuencia")} ``
-
-Distribución de categorías tributarias
-
-`{r} ggplot(df_acteco, aes(x = 'CATEGORIA_TRIBUTARIA', fill = 'CATEGORIA_TRIBUTARIA')) + geom_bar() + labs(title = "Distribución de Categorías Tributarias", x = "Categoría", y = "Frecuencia") + theme_minimal()}`
-
-Evolución de registros por año
-
-`{r} df_acteco$Year <- year(df_acteco$FECHA) ggplot(df_acteco, aes(x = Year)) + geom_histogram(binwidth = 1, fill = "steelblue", color = "black") + labs(title = "Registros por Año", x = "Año", y = "Frecuencia") + theme_minimal()}`
-
-Ahora cargamos el archivo de las sucursales y sus direcciones
-
-`{r} library(readr) df_sucur <- read_delim("PUB_NOM_SUCURSAL.txt",delim = "\t", escape_double = FALSE, trim_ws = TRUE)}`
-
-`{r} head(df_sucur)}`
-
-`{r} summary(df_acteco)}`
-
-Escogemos los valores necesarios en nuevos dataframes resumidos
-
-De: "df_acteco" creamos uno nuevo "df_res_acteco" con solo con RUT CODIGO ACTIVIDAD y FECHA
-
-`{r} df_re_acteco<- df_acteco[, c("RUT", "CODIGO ACTIVIDAD", "FECHA")] rm(df_acteco) #limpia}`
-
-`` {r}  sum(is.na(df_re_acteco$RUT)) sum(is.na(df_re_acteco$`CODIGO ACTIVIDAD`)) sum(is.na(df_re_acteco$FECHA))} ``
-
-`{r} df_re_sucur<- df_sucur[, c("RUT", "VIGENCIA", "FECHA","COMUNA","REGION")] rm(df_sucur) #limpia memoria del dataframe que ya no necesitamos}`
-
-`{r} sum(is.na(df_re_sucur$RUT)) sum(is.na(df_re_sucur$VIGENCIA)) sum(is.na(df_re_sucur$FECHA)) sum(is.na(df_re_sucur$COMUNA)) sum(is.na(df_re_sucur$REGION))}`
-
-Para usar filtros se debe normalizar la data en COMUNA y REGION
-
-Buscamos registros unicos y que no se repitan con otros
-
-COMUNA:
-
-`{r} com_uni <- unique(df_re_sucur$COMUNA) com_uni_ord <- sort(com_uni, decreasing = FALSE) df_com_uni_ord <- data.frame(COMUNA = com_uni_ord) rm(com_uni)#Limpiamos rm(com_uni_ord)#Limpiamos}`
-
-REGION:
-
-`{r} reg_uni <- unique(df_re_sucur$REGION) reg_uni_ord <- sort(reg_uni, decreasing = FALSE) df_reg_uni_ord <- data.frame(REGION = reg_uni_ord) rm(reg_uni) #limpiamos  rm(reg_uni_ord)#limpiamos}`
+Subdividimos el CODIGO ACTIVIDAD y creamos los campos División y Clase, necesarios para nuestro análisis.
 
 ```{r}
+PUB_NOM_ACTECOS2<-PUB_NOM_ACTECOS2%>%   mutate(     Division = substr(as.character(PUB_NOM_ACTECOS2$`CODIGO ACTIVIDAD`), 1, 2),     Clase = substr(as.character(PUB_NOM_ACTECOS2$`CODIGO ACTIVIDAD`), 1, 4)   )
 ```
 
-Reemplazar caracteres especiales
+```{r}
+head(PUB_NOM_ACTECOS2)
+```
 
-`{r} df_reg_uni_ord[df_reg_uni_ord == "Sin Información"] <- "Sin Informacion" df_reg_uni_ord[df_reg_uni_ord == "VI REGION DEL LIBERTADOR GENERAL BERNARDO O'HIGGINS"] <- "VI REGION DEL LIBERTADOR GENERAL BERNARDO O HIGGINS" df_reg_uni_ord[df_reg_uni_ord == "XI REGION AYSEN DEL GENERAL CARLOS IBAÑEZ DEL CAMPO"] <- "XI REGION AYSEN DEL GENERAL CARLOS IBANEZ DEL CAMPO" df_reg_uni_ord[df_reg_uni_ord == "     XVI REGION DE ÑUBLE"] <- "  XVI REGION DE NUBLE"}`
+Division y Clase los convertimos en factor
 
-Descripción detallada de los pasos tomados para limpiar y preparar los datos para el análisis utilizando *Tidyverse*.
+```{r}
+PUB_NOM_ACTECOS2<-PUB_NOM_ACTECOS2 %>% mutate(Division = as.factor(Division), Clase = as.factor(Clase))
+```
 
-### Análisis Exploratorio de Datos
+-   PUB_NOM_DOMICILIO
 
-Implementación de códigos en R para explorar los datos. Esto puede incluir visualizaciones de datos, medidas de tendencia central, etc. Para los gráficos se debe usar solo *ggplot2.*
+```{r}
+head(PUB_NOM_DOMICILIO)
+```
 
-Planificación del proyecto de Data Science Incluyendo el marco Teórico, metodologías y entregables.
+```{r}
+str(PUB_NOM_DOMICILIO)
+```
+
+```{r}
+summary(PUB_NOM_DOMICILIO)
+```
+
+Vemos datos falatantes
+
+```{r}
+colSums(is.na(PUB_NOM_DOMICILIO))  # Verifica cuántos NA hay por columna.
+```
+
+Para nuestro análisis de la data de PUB_NOM_DOMICILIO: necesitaremos los campos RUT, FECHA y REGION con estado de VIGENCIA= S "están vigentes"
+
+```{r}
+PUB_NOM_DOMICILIO2 <- PUB_NOM_DOMICILIO %>%
+  filter(VIGENCIA == "S") %>%
+  select(RUT, FECHA, REGION)
+```
+
+```{r}
+str(PUB_NOM_DOMICILIO2)
+```
+
+-- Cambiamos el nombre del campo fecha por FEC_DOM, que es más representativo
+
+-- Eliminamos REGION en los datos de REGION ya que se representa por el nombre de la columna y facilita su visualización.
+
+```{r}
+PUB_NOM_DOMICILIO2 <- PUB_NOM_DOMICILIO2 %>% rename(FEC_DOM = FECHA)%>% 
+  mutate(REGION = str_replace(REGION, " REGION ", " "))
+```
+
+```{r}
+head(PUB_NOM_DOMICILIO2)
+```
+
+Se cargan los niveles de las actividades economicas
+
+```{r}
+Nvl_Act_eco <- read_delim("Nivel_Act_eco.txt",
+    delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+```{r}
+head(Nvl_Act_eco)
+```
+
+Se unen PUB_NOM_ACTECOS2 y PUB_NOM_DOMICILIO2, en nuevo frame para el análisis final
+
+```{r}
+rm(Data_Studio)
+```
+
+```{r}
+Data_Studio <- merge(PUB_NOM_ACTECOS2, PUB_NOM_DOMICILIO2, by = "RUT")
+
+```
+
+```{r}
+head(Data_Studio)
+```
+
+```{r}
+summary(Data_Studio)
+```
+
+Estructura y tipos de datos Data_Studio
+
+```{r}
+str(Data_Studio)
+```
+
+Eliminamos los registros con datos en REGION = Sin Información
+
+```{r}
+Data_Studio <- subset(Data_Studio, REGION != "Sin Información")
+```
+
+##### VisualizacionesMostrar cantidad de divisiones por Region
+
+```{r}
+data_REG_Div <- Data_Studio |> 
+  dplyr::group_by(REGION, Division) |> 
+  dplyr::summarise(n = n(), .groups = 'drop')
+
+ggplot(data = data_REG_Div, aes(x = REGION, y = n, fill = REGION)) +
+  geom_bar(stat = "identity") +  labs(title = "Total Divisiones por Region",  x = "Region",    y = "Numero de Empresas") +  theme_minimal()+
+  theme(axis.text.x = element_blank())
+```
+
+Mostrar la division = 02 por cada Region
+
+```{r}
+data_REG_Div_02 <- Data_Studio |> 
+  dplyr::group_by(REGION, Division) |> 
+  dplyr::summarise(n = n(), .groups = 'drop') |> 
+  dplyr::filter(Division == "02")
+
+ggplot(data = data_REG_Div, aes(x = REGION, y = n, fill = REGION)) +
+  geom_bar(stat = "identity") +  labs(title = "Division 02",  x = "Region",    y = "Numero de Empresas") +  theme_minimal()+
+  theme(axis.text.x = element_blank())
+
+```
+
+Division 10
+
+```{r}
+data_REG_Div_10 <- Data_Studio |> 
+  dplyr::group_by(REGION, Division) |> 
+  dplyr::summarise(n = n(), .groups = 'drop') |> 
+  dplyr::filter(Division == "10")
+
+ggplot(data = data_REG_Div, aes(x = REGION, y = n, fill = REGION)) +
+  geom_bar(stat = "identity") +  labs(title = "Division 10",  x = "Region",    y = "Numero de Empresas") +  theme_minimal()+
+  theme(axis.text.x = element_blank())
+```
+
+Segun la grafica podriamos inferir que la gran concentración de empresas están el la XIII Región, independiente de su division.
