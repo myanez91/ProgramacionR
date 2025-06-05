@@ -6,4 +6,7 @@ Curso de programación en R
 
 ## Enlaces de interes
 #### https://icassol.github.io/CursoR/
+
+## GIT
+#### https://github.com/jelincovil/A_first_course_R_programming
 #### https://github.com/rstudio/shiny-examples
