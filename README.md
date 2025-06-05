@@ -10,3 +10,6 @@ Curso de programación en R
 ## GIT
 #### https://github.com/jelincovil/A_first_course_R_programming
 #### https://github.com/rstudio/shiny-examples
+
+## Videos
+https://www.youtube.com/@Enriqueloper
