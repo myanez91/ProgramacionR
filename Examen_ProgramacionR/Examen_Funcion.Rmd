@@ -1,0 +1,586 @@
+---
+title: "Examen de Programación en R"
+author: "Marcelo Andrés Yáñez Barrientos"
+universidad: "Universidad de las Américas"
+curso: "Programación en R"
+date: "08 de julio de 2025"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    collapsed: true
+    smooth_scroll: true
+    theme: journal
+    highlight: kate
+    df_print: paged
+    code_folding: show
+---
+
+```{r}
+# Configuración inicial de knitr
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Parte I: documentación de objetos en el proyecto
+
+Librerias necesarias
+
+```{r}
+rm(list = ls())  # Limpiar entorno de trabajo para evitar conflictos
+gc()             # Liberar memoria no utilizada
+
+# Lista de librerías requeridas
+required_packages <- c("tidyverse", "knitr", "roxygen2", "devtools", "lubridate", 
+                       "plotly", "shiny", "readxl", "here", "testthat", "DT", "writexl")
+
+# Función para instalar paquetes si no están instalados
+install_if_missing <- function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# Instalar y cargar librerías
+lapply(required_packages, install_if_missing)
+```
+
+## Documentación del dataset
+
+### Introducción
+
+El Servicio de Impuestos Internos (SII) proporciona datos sobre personas jurídicas, incluyendo sus actividades económicas y direcciones, permitiendo analizar la concentración de industrias por sector según la Clasificación Industrial Internacional Uniforme (CIIU).
+
+**Clasificación CIIU**
+
+El código de actividad económica del SII tiene seis dígitos y su estructura es la siguiente:
+
+-   **Sección**: Letra (e.g., A, B).
+
+-   **División**: 2 dígitos
+
+-   **Clase**: 4 dígitos
+
+-   Nómina de actividades económicas\
+    **Archivo PUB_NOM_ACTECOS.txt**\
+    Listado de contribuyentes personas jurídicas con actividades económicas vigentes\
+    (Actualización: mayo 2025, 3.574.193 registros)
+
+    [Nómina de actividades económicas de contribuyentes personas jurídicas](https://www.sii.cl/estadisticas/nominas/PUB_NOM_ACTECOS.zip)
+
+-   Nómina de direcciones\
+    **PUB_NOM_DOMICILIO.txt**\
+    Listado de direcciones (Casa Matriz) vigentes y no vigentes\
+    (Actualización: mayo 2025, 4.682.116 registros)
+
+    [Nómina de direcciones personas jurídicas](https://www.sii.cl/estadisticas/nominas/PUB_NOM_DIRECCIONES.zip)]
+
+### Bases y estructuras
+
+-   Estructura **PUB_NOM_ACTECOS.txt**
+
+--RUT (chr): Identificador único del contribuyente (cualitativa, nominal)\
+--DV (chr): Dígito verificador del RUT (cualitativa, nominal)\
+--CODIGO ACTIVIDAD (chr): Código de actividad económica (cualitativa, nominal)\
+--DESC. ACTIVIDAD ECONOMICA (chr): Descripción de la actividad (cualitativa, nominal)\
+--FECHA (chr): Fecha de registro (cuantitativa, continua)\
+--AFECTA A IVA (chr): Indica si afecta al IVA ("S" o "N") (cualitativa, nominal)\
+--CATEGORIA TRIBUTARIA (chr): Categoría tributaria (cualitativa, ordinal)\
+
+-   Estructura **PUB_NOM_DOMICILIO.txt**
+
+--RUT (chr): Identificador único (cualitativa, nominal)\
+--DV (chr): Dígito verificador (cualitativa, nominal)\
+--VIGENCIA (chr): Estado del domicilio ("S" o "N") (cualitativa, nominal)\
+--FECHA (chr): Fecha de registro de la empresa (cuantitativa, continua)\
+--TIPO_DIRECCION (chr): Tipo de dirección de la empresa (e.g., "MATRIZ") (cualitativa, nominal)\
+--CALLE (chr): Nombre de la calle de la empresa (cualitativa, nominal)\
+--NUMERO (chr): Número de la dirección de la empresa (cualitativa, nominal)\
+--BLOQUE (chr): Bloque del domicilio (cualitativa, nominal)\
+--DEPARTAMENTO (chr): Número de departamento de la empresa (cualitativa, nominal)\
+--VILLA_POBLACION (chr): Villa o población (cualitativa, nominal)\
+--CIUDAD (chr): Ciudad de la empresa (cualitativa, nominal)\
+--COMUNA (chr): Comuna de la empresa (cualitativa, nominal)\
+--REGION (chr): Región de la empresa (cualitativa, nominal)\
+
+Después del análisis de la cátedra se unen las bases y se transforman en una nueva base llamada Data_SII, la cual se integrará con Nvl_Act_eco, para el desarrollo del Dashboard en Shiny. Por ejemplo, mostrará gráficos interactivos de actividades económicas por región según su sección, división o clase.
+
+### Archivos:
+
+-- Data_SII.txt: Base integrada para el dashboard Shiny\
+-- Nvl_Act_eco.txt: Niveles de actividad económica\
+
+-   Estructura **Data_SII.txt**\
+
+    -- actividad (chr): Código de actividad económica (cualitativa, nominal)\
+    -- seccion(chr): Código de actividad económica (cualitativa, nominal)\
+    -- division (chr): División CIIU (cualitativa, nominal)\
+    -- fec_actividad (chr): Fecha de registro actividad (cuantitativa, continua)\
+    -- region (chr): Región de la empresa (cualitativa, nominal)\
+    -- fec_region (chr): Fecha de registro del domicilio de la empresa (cuantitativa, continua)\
+
+-   Estructura **Nvl_Act_eco.txt** "Niveles actividad económica"
+
+    --seccion (chr): Sección CIIU (cualitativa, nominal)\
+    --gls_seccion (chr): Descripción de la sección (cualitativa, nominal)\
+    --division (chr): División CIIU (cualitativa, nominal)\
+    --gls_division (chr): Descripción de la división (cualitativa, nominal)\
+    --grupo (chr): Grupo CIIU (cualitativa, nominal)\
+    --gls_grupo (chr): Descripción del grupo (cualitativa, nominal)\
+    --clase (chr): Clase CIIU (cualitativa, nominal)\
+    --gls_clase (chr): Descripción de la clase (cualitativa, nominal)\
+    (3.574. 173 registros)
+
+## Documentación de funciones
+
+La siguiente sección presenta las funciones desarrolladas para el proyecto, cada una documentada con el estándar Roxygen2 para facilitar su comprensión y uso.
+
+
+##Funciones genericas.
+
+Función cargar_archivo
+
+La función cargar_archivo está diseñada para cargar archivos de texto (.txt, .csv) o Excel (.xlsx, .xls) en un tibble de R, con una útil detección automática de delimitadores para los archivos de texto. Además, ofrece la opción de asignar el tibble resultante directamente al entorno global para un acceso más fácil.
+
+```{r}
+#' @title Cargar archivo en la raíz del proyecto con delimitador automático
+#'
+#' @description
+#' Esta función carga archivos de texto (.txt, .csv) o Excel (.xlsx, .xls) en un tibble de R, con detección automática de delimitadores para archivos de texto. Ofrece la opción de asignar el tibble al entorno global.
+#'
+#' @param nombre_archivo Nombre del archivo (relativo a la raíz del proyecto).
+#' @param asignar_globalmente Logical: Si TRUE, asigna el tibble al entorno global (default: TRUE).
+#' @param ... Argumentos adicionales para read_delim o read_excel.
+#'
+#' @return Tibble con los datos cargados o NULL en caso de error.
+#' @export
+cargar_archivo <- function(nombre_archivo, asignar_globalmente = TRUE, ...) {
+  
+  # Construir ruta completa usando here::here
+  ruta_archivo <- here::here(nombre_archivo)
+  
+  # Validar existencia del archivo
+  if (!file.exists(ruta_archivo)) {
+    message(paste0("ERROR: El archivo '", ruta_archivo, "' no existe en el proyecto."))
+    return(NULL)
+  }
+  
+  # Generar nombre limpio para el objeto
+  nombre_base <- basename(ruta_archivo)
+  nombre_objeto <- tools::file_path_sans_ext(nombre_base) %>%
+    str_replace_all("[^a-zA-Z0-9_]", "") %>%
+    { if (str_detect(., "^[0-9]")) paste0("datos_", .) else . }
+  if (nchar(nombre_objeto) == 0) {
+    nombre_objeto <- "datos_genericos"
+    warning("Nombre de objeto inválido. Usando 'datos_genericos'.")
+  }
+  
+  # Detectar si es Excel
+  extension <- tolower(tools::file_ext(ruta_archivo))
+  is_excel <- extension %in% c("xls", "xlsx")
+  
+  # Detección automática de delimitador para archivos de texto
+  detectar_delimitador <- function(ruta, posibles = c(",", "\t", ";", "|")) {
+    linea <- readLines(ruta, n = 1)
+    conteos <- sapply(posibles, function(d) str_count(linea, fixed(d)))
+    if (all(conteos == 0)) return(",")
+    posibles[which.max(conteos)]
+  }
+  
+  # Cargar el archivo
+  datos_cargados <- tryCatch({
+    if (is_excel) {
+      readxl::read_excel(ruta_archivo, ...)
+    } else {
+      delim <- detectar_delimitador(ruta_archivo)
+      readr::read_delim(ruta_archivo, delim = delim, escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE, ...)
+    }
+  }, error = function(e) {
+    message(paste0("ERROR al cargar '", nombre_base, "': ", e$message))
+    return(NULL)
+  })
+  
+  if (is.null(datos_cargados)) return(NULL)
+  
+  # Convertir a tibble
+  datos_tibble <- as_tibble(datos_cargados)
+  
+  # Asignar al entorno global si se indica
+  if (asignar_globalmente) {
+    assign(nombre_objeto, datos_tibble, envir = .GlobalEnv)
+    message(paste0("Archivo '", nombre_base, "' cargado como '", nombre_objeto, "' en el entorno global."))
+  }
+  
+  return(datos_tibble)
+}
+```
+
+
+
+La función analizar_distribuciones es una herramienta para comprender la composición de tus datos, actividades económicas (CIIU) y ubicación geográfica por región. 
+
+Genera tablas de conteo como gráficos de barras. 
+
+```{r}
+#' @title Analizar y visualizar distribuciones de datos
+#'
+#' @description
+#' Esta función calcula y opcionalmente visualiza las distribuciones de frecuencia de las actividades económicas (CIIU, por sección o división) y por región en un conjunto de datos. Permite personalización de colores y temas de ggplot2.
+#'
+#' @param datos Data.frame o tibble con los datos.
+#' @param agrupar_ciiu Character: "seccion" (default) o "division".
+#' @param color_ciiu Character: Color para gráfico CIIU (default: "steelblue").
+#' @param color_region Character: Color para gráfico región (default: "darkgreen").
+#' @param tema_ggplot Character: Tema de ggplot2 (default: "theme_minimal").
+#' @param retorno Character: "tablas", "graficos" o "ambos" (default).
+#'
+#' @return Lista con tablas y/o gráficos según `retorno`.
+#' @export
+analizar_distribuciones <- function(datos, agrupar_ciiu = "seccion", color_ciiu = "steelblue", 
+                                    color_region = "darkgreen", tema_ggplot = "theme_minimal", retorno = "ambos") {
+  
+  # Validaciones
+  if (!is.data.frame(datos)) stop("datos debe ser un data.frame o tibble.")
+  if (!agrupar_ciiu %in% c("seccion", "division")) stop("agrupar_ciiu debe ser 'seccion' o 'division'.")
+  if (!retorno %in% c("tablas", "graficos", "ambos")) stop("retorno debe ser 'tablas', 'graficos' o 'ambos'.")
+  
+  cols_req <- c(agrupar_ciiu, "region")
+  missing_cols <- setdiff(cols_req, names(datos))
+  if (length(missing_cols) > 0) stop(paste("Faltan columnas:", paste(missing_cols, collapse = ", ")))
+  
+  tema_func <- match.fun(tema_ggplot)
+  
+  # Tablas de frecuencia
+  tabla_ciiu <- datos %>%
+    count(!!sym(agrupar_ciiu)) %>%
+    arrange(desc(n)) %>%
+    rename_with(~ agrupar_ciiu, 1)
+  
+  tabla_region <- datos %>%
+    count(region) %>%
+    arrange(desc(n))
+  
+  tablas <- list(ciiu = tabla_ciiu, region = tabla_region)
+  
+  # Gráficos si se solicitan
+  if (retorno %in% c("graficos", "ambos")) {
+    graf_ciiu <- ggplot(tabla_ciiu, aes(x = reorder(!!sym(agrupar_ciiu), -n), y = n, fill = color_ciiu)) +
+      geom_bar(stat = "identity") +
+      labs(title = paste("Distribución por", toupper(agrupar_ciiu)), x = agrupar_ciiu, y = "Frecuencia") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+      scale_fill_manual(values = color_ciiu) +
+      tema_func() +
+      theme(legend.position = "none")
+    
+    graf_region <- ggplot(tabla_region, aes(x = reorder(region, -n), y = n, fill = color_region)) +
+      geom_bar(stat = "identity") +
+      labs(title = "Distribución por Región", x = "Región", y = "Frecuencia") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+      scale_fill_manual(values = color_region) +
+      tema_func() +
+      theme(legend.position = "none")
+    
+    graficos <- list(ciiu = graf_ciiu, region = graf_region)
+  }
+  
+  # Retorno
+  if (retorno == "tablas") return(list(tablas = tablas))
+  if (retorno == "graficos") return(list(graficos = graficos))
+  return(list(tablas = tablas, graficos = graficos))
+}
+```
+
+## Documentación de Clases S3
+
+### S3 para cargar_archivo
+
+```{r}
+#' @title Cargar archivo en la raíz del proyecto con delimitador automático (Genérica S3)
+#'
+#' @description
+#' Función genérica S3 para cargar archivos.
+#'
+#' @param x Objeto sobre el que se despacha el método (e.g., character para nombre del archivo).
+#' @param ... Argumentos adicionales.
+#'
+#' @return Tibble con datos cargados.
+#' @export
+cargar_archivo <- function(x, ...) {
+  UseMethod("cargar_archivo")
+}
+
+#' @method cargar_archivo character
+#' @export
+cargar_archivo.character <- function(nombre_archivo, asignar_globalmente = TRUE, ...) {
+  # Código de la función original aquí (copiado y ajustado si es necesario)
+  ruta_archivo <- here::here(nombre_archivo)
+  if (!file.exists(ruta_archivo)) {
+    message(paste0("ERROR: El archivo '", ruta_archivo, "' no existe."))
+    return(NULL)
+  }
+  
+  nombre_base <- basename(ruta_archivo)
+  nombre_objeto <- tools::file_path_sans_ext(nombre_base) %>%
+    str_replace_all("[^a-zA-Z0-9_]", "") %>%
+    { if (str_detect(., "^[0-9]")) paste0("datos_", .) else . }
+  if (nchar(nombre_objeto) == 0) {
+    nombre_objeto <- "datos_genericos"
+    warning("Nombre inválido. Usando 'datos_genericos'.")
+  }
+  
+  extension <- tolower(tools::file_ext(ruta_archivo))
+  is_excel <- extension %in% c("xls", "xlsx")
+  
+  detectar_delimitador <- function(ruta, posibles = c(",", "\t", ";", "|")) {
+    linea <- readLines(ruta, n = 1)
+    conteos <- sapply(posibles, function(d) str_count(linea, fixed(d)))
+    if (all(conteos == 0)) return(",")
+    posibles[which.max(conteos)]
+  }
+  
+  datos_cargados <- tryCatch({
+    if (is_excel) {
+      readxl::read_excel(ruta_archivo, ...)
+    } else {
+      delim <- detectar_delimitador(ruta_archivo)
+      readr::read_delim(ruta_archivo, delim = delim, escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE, ...)
+    }
+  }, error = function(e) {
+    message(paste0("ERROR al cargar '", nombre_base, "': ", e$message))
+    NULL
+  })
+  
+  if (is.null(datos_cargados)) return(NULL)
+  
+  datos_tibble <- as_tibble(datos_cargados)
+  
+  if (asignar_globalmente) {
+    assign(nombre_objeto, datos_tibble, envir = .GlobalEnv)
+    message(paste0("Archivo '", nombre_base, "' cargado como '", nombre_objeto, "'."))
+  }
+  
+  return(datos_tibble)
+}
+```
+
+
+### S3 para analizar_distribuciones
+
+Primero, creamos la función genérica analizar_distribuciones. Esta función será la "puerta de entrada" y, dependiendo de la clase del primer argumento (datos), llamará al método específico adecuado.
+
+```{r}
+#' @title Analizar y visualizar distribuciones de datos
+#'
+#' @description
+#' `analizar_distribuciones` es una función genérica S3 para calcular y
+#' opcionalmente visualizar las distribuciones de frecuencia de actividades
+#' económicas (CIIU) y regiones en conjuntos de datos.
+#'
+#' @param datos Un objeto sobre el cual el método será despachado (ej. un `data.frame`).
+#' @param ... Argumentos adicionales pasados a los métodos específicos.
+#'
+#' @return El resultado del método S3 despachado.
+#' @export
+analizar_distribuciones <- function(datos, ...) {
+  UseMethod("analizar_distribuciones")
+}
+```
+
+Segundo, definir el método específico para data.frame.
+
+Ahora, creamos el método analizar_distribuciones
+
+
+```{r}
+#' @title Método S3 para analizar distribuciones en data.frames
+#'
+#' @description
+#' Método específico para data.frames de la función genérica `analizar_distribuciones`.
+#' Calcula y opcionalmente visualiza distribuciones de frecuencia por CIIU (sección o división)
+#' y región.
+#'
+#' @param datos Un data.frame o tibble con columnas requeridas (al menos "seccion", "division" y "region").
+#' @param agrupar_ciiu Character: "seccion" (default) o "division".
+#' @param color_ciiu Character: Color para barras del gráfico CIIU (default: "steelblue").
+#' @param color_region Character: Color para barras del gráfico región (default: "darkgreen").
+#' @param tema_ggplot Character: Tema de ggplot2 (default: "theme_minimal").
+#' @param retorno Character: "tablas", "graficos" o "ambos" (default).
+#' @param ... Argumentos adicionales (no usados en este método).
+#'
+#' @return Lista con tablas y/o gráficos según `retorno`.
+#' @export
+analizar_distribuciones.data.frame <- function(datos,
+                                               agrupar_ciiu = "seccion",
+                                               color_ciiu = "steelblue",
+                                               color_region = "darkgreen",
+                                               tema_ggplot = "theme_minimal",
+                                               retorno = "ambos",
+                                               ...) {
+  
+  # Validación de entradas
+  if (!is.data.frame(datos)) {
+    stop("El argumento 'datos' debe ser un data.frame o tibble.")
+  }
+  if (!agrupar_ciiu %in% c("seccion", "division")) {
+    stop("El argumento 'agrupar_ciiu' debe ser 'seccion' o 'division'.")
+  }
+  if (!retorno %in% c("tablas", "graficos", "ambos")) {
+    stop("El argumento 'retorno' debe ser 'tablas', 'graficos' o 'ambos'.")
+  }
+  
+  # Verificar columnas requeridas
+  cols_req <- c(agrupar_ciiu, "region")
+  missing_cols <- setdiff(cols_req, names(datos))
+  if (length(missing_cols) > 0) {
+    stop(paste("Faltan columnas requeridas:", paste(missing_cols, collapse = ", ")))
+  }
+  
+  # Validar tema de ggplot
+  tema_func <- tryCatch(get(tema_ggplot, envir = asNamespace("ggplot2")), error = function(e) NULL)
+  if (!is.function(tema_func)) {
+    stop(paste("El tema de ggplot '", tema_ggplot, "' no es una función válida."))
+  }
+  
+  # Cálculo de tablas de frecuencia
+  tabla_ciiu <- datos %>%
+    dplyr::count(!!sym(agrupar_ciiu)) %>%
+    dplyr::arrange(desc(n)) %>%
+    dplyr::rename_with(~ agrupar_ciiu, 1)
+  
+  tabla_region <- datos %>%
+    dplyr::count(region) %>%
+    dplyr::arrange(desc(n))
+  
+  tablas <- list(ciiu = tabla_ciiu, region = tabla_region)
+  
+  # Generación de gráficos (si se solicita)
+  if (retorno %in% c("graficos", "ambos")) {
+    graf_ciiu <- ggplot(tabla_ciiu, aes(x = reorder(!!sym(agrupar_ciiu), -n), y = n)) +
+      geom_bar(stat = "identity", fill = color_ciiu) +
+      labs(title = paste("Distribución por", toupper(agrupar_ciiu)), x = agrupar_ciiu, y = "Frecuencia") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      tema_func()
+    
+    graf_region <- ggplot(tabla_region, aes(x = reorder(region, -n), y = n)) +
+      geom_bar(stat = "identity", fill = color_region) +
+      labs(title = "Distribución por Región", x = "Región", y = "Frecuencia") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      tema_func()
+    
+    graficos <- list(ciiu = graf_ciiu, region = graf_region)
+  }
+  
+  # Retorno según lo solicitado
+  if (retorno == "tablas") return(list(tablas = tablas))
+  if (retorno == "graficos") return(list(graficos = graficos))
+  return(list(tablas = tablas, graficos = graficos))
+}
+```
+
+- probar funcion s3
+
+```{r}
+# Datos de ejemplo para probar la función S3 genérica y el método .data.frame
+datos_ejemplo <- data.frame(
+  seccion = sample(LETTERS[1:5], 100, replace = TRUE),
+  division = sample(10:15, 100, replace = TRUE),
+  region = sample(c("RM", "BioBio", "Valparaiso"), 100, replace = TRUE)
+)
+
+# Llamada a la genérica (despacha al método .data.frame)
+resultados <- analizar_distribuciones(datos_ejemplo, agrupar_ciiu = "division", retorno = "ambos")
+
+# Visualizar resultados
+print(resultados$tablas$ciiu)
+print(resultados$tablas$region)
+print(resultados$graficos$ciiu)
+print(resultados$graficos$region)
+
+# Probar con clase explícita (aunque tibble hereda de data.frame)
+class(datos_ejemplo) <- c("tbl_df", "data.frame")
+resultados_tbl <- analizar_distribuciones(datos_ejemplo)
+print(resultados_tbl$tablas$ciiu)  # Debe funcionar igual
+
+```
+# Parte II: Testeo de funciones
+
+
+## Flujo de trabajo de testeo
+
+Se utiliza el paquete `testthat` para pruebas unitarias, siguiendo las mejores prácticas descritas en "R Packages" de Hadley Wickham. Las pruebas se almacenan en el directorio `tests/testthat/` y se ejecutan con `devtools::test()`.
+
+
+## Estructura del test
+
+Cada prueba verifica:
+
+1. **Entradas válidas**: Comprobar que las funciones procesan correctamente datos correctos.
+2. **Manejo de errores**: Validar que las funciones devuelven errores apropiados para entradas inválidas.
+3. **Resultados esperados**: Confirmar que las salidas tienen el formato y valores esperados.
+
+## Ejemplo de pruebas
+A continuación, se presentan pruebas unitarias para `cargar_archivo` y `analizar_distribuciones`.
+
+### Pruebas para analizar_distribuciones
+```{r}
+test_that("analizar_distribuciones genera tablas y gráficos correctos", {
+  # Datos de ejemplo (sin cambios)
+  datos_ejemplo <- data.frame(
+    seccion = sample(LETTERS[1:5], 100, replace = TRUE),
+    division = sample(10:15, 100, replace = TRUE),
+    region = sample(c("RM", "BioBio", "Valparaiso"), 100, replace = TRUE)
+  )
+  
+  # Prueba por defecto (seccion, ambos) - sin cambios
+  resultados <- analizar_distribuciones(datos_ejemplo)
+  expect_type(resultados, "list")
+  expect_length(resultados, 2)
+  expect_named(resultados, c("tablas", "graficos"))
+  
+  # Comprobar tablas - sin cambios
+  expect_type(resultados$tablas, "list")
+  expect_length(resultados$tablas, 2)
+  expect_s3_class(resultados$tablas$ciiu, "data.frame")
+  expect_s3_class(resultados$tablas$region, "data.frame")
+  expect_named(resultados$tablas$ciiu, c("seccion", "n"))
+  expect_named(resultados$tablas$region, c("region", "n"))
+  expect_true(all(resultados$tablas$ciiu$n > 0))
+  expect_equal(sum(resultados$tablas$ciiu$n), 100)
+  expect_equal(sum(resultados$tablas$region$n), 100)
+  
+  # Comprobar gráficos - sin cambios
+  expect_type(resultados$graficos, "list")
+  expect_length(resultados$graficos, 2)
+  expect_s3_class(resultados$graficos$ciiu, "ggplot")
+  expect_s3_class(resultados$graficos$region, "ggplot")
+  
+  # Prueba con agrupar_ciiu = "division", solo tablas - sin cambios
+  resultados_tablas <- analizar_distribuciones(datos_ejemplo, agrupar_ciiu = "division", retorno = "tablas")
+  expect_type(resultados_tablas, "list")
+  expect_length(resultados_tablas, 1)
+  expect_named(resultados_tablas$tablas$ciiu, c("division", "n"))
+  
+  # Prueba con retorno = "graficos" - sin cambios
+  resultados_graficos <- analizar_distribuciones(datos_ejemplo, retorno = "graficos")
+  expect_type(resultados_graficos, "list")
+  expect_length(resultados_graficos, 1)
+  expect_s3_class(resultados_graficos$graficos$ciiu, "ggplot")
+  
+  # Prueba con tema personalizado y colores - sin cambios
+  resultados_custom <- analizar_distribuciones(
+    datos_ejemplo,
+    color_ciiu = "purple",
+    color_region = "orange",
+    tema_ggplot = "theme_bw"
+  )
+  expect_s3_class(resultados_custom$graficos$ciiu, "ggplot")
+})
+
+
+```
+
+
+### **Referencias**
+
+- RStudio Community. (2023). Guía de testthat.
