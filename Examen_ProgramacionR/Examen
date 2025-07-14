@@ -1,1 +1,26 @@
-Examen Final Programacion en R
+"Examen de Programación en R"
+Curso de Programación en R en la Universidad de las Américas
+Desarrollo de funciones y pruebas unitarias.
+Se enfoca en el análisis de datos del Servicio de Impuestos Internos (SII) de Chile
+sobre actividades económicas de personas jurídicas, utilizando la Clasificación Industrial Internacional Uniforme (CIIU).
+Incluye enlaces a repositorios en GitHub y Posit Cloud para el código fuente y dashboard interactivo. El documento se divide en dos partes principales.
+
+Parte I: Documentación de Objetos en el Proyecto
+Configuración Inicial
+Documentación del Dataset:
+
+Integración: La base "Data_SII.txt" (con columnas como actividad, sección, división, fechas de actividad y región) y se complementan con "Nvl_Act_eco.txt" (niveles CIIU: sección, división, grupo, clase y descripciones). Estos archivos soportan un dashboard Shiny para visualizaciones interactivas de actividades por región, sección, división o clase.
+Documentación de Funciones (usando estándar Roxygen2):
+
+Analizar_distribuciones: Analiza frecuencias de actividades CIIU (por sección o división) y regiones. Genera tablas de conteo y gráficos de barras (usando ggplot2), con opciones de colores, temas y retorno (tablas, gráficos o ambos).
+Documentación de Clases S3:
+Implementa métodos S3 para las funciones anteriores.
+Analizar_distribuciones: Método genérico con despachado para data.frame/tibble. Incluye validaciones, cálculos de frecuencias y gráficos personalizables. Se prueba con datos de ejemplo (100 observaciones simuladas).
+
+Parte II: Testeo de Funciones
+Flujo de Trabajo: Usa el paquete testthat para pruebas unitarias, almacenadas en tests/testthat/ y ejecutadas con devtools::test(). Sigue mejores prácticas de "R Packages" de Hadley Wickham.
+Estructura de Tests: Verifica entradas válidas, manejo de errores y resultados esperados (formato y valores).
+Ejemplos de Pruebas:
+Para analizar_distribuciones: Usa datos de ejemplo para comprobar tipos de salida (listas con tablas y gráficos),
+Referencias: Cita la guía de testthat de RStudio Community (2023).
+En resumen, el documento demuestra competencias en manipulación de datos grandes, documentación profesional con roxygen2, programación orientada a objetos S3 y testing riguroso.
