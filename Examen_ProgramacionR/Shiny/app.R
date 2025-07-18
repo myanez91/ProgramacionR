@@ -1,4 +1,10 @@
 # app.R
+# Install if needed: install.packages(c("shiny", "tidyverse", "plotly", "readxl", "here", "tools", "DT", "lubridate", "bslib", "shinycssloaders", "data.table"))
+
+
+rm(list = ls())  # Limpiar entorno de trabajo para evitar conflictos
+gc()             # Liberar memoria no utilizada
+
 
 # Carga de librerías necesarias para la aplicación Shiny
 library(shiny)
@@ -7,20 +13,23 @@ library(plotly)    # Para gráficos interactivos
 library(readxl)    # Para leer archivos Excel
 library(here)      # Para gestionar rutas de archivos de forma robusta
 library(tools)     # Para funciones de manejo de rutas de archivos
+library(DT)        # Para tablas interactivas
+library(lubridate) # Para manejo de fechas
+library(bslib)     # Para temas de Shiny
+library(shinycssloaders) # Para spinners de carga
+library(data.table) # Para carga y procesamiento eficiente de datos grandes
 
 # --- Definición de funciones ---
 
 #' @title Cargar archivo de raíz del proyecto
-#' @description Carga archivos de texto (.txt, .csv) o Excel (.xlsx, .xls) en un tibble.
-#'   Incluye detección automática de delimitadores y manejo de codificaciones.
+#' @description Carga archivos de texto (.txt, .csv) o Excel (.xlsx, .xls) en un data.table para eficiencia.
+#'    Usa fread para TXT/CSV (rápido para datos grandes) y read_excel para Excel.
 #' @param nombre_archivo Nombre del archivo (relativo a la raíz del proyecto).
-#' @param asignar_globalmente Si TRUE, asigna el tibble al entorno global con un nombre limpio.
-#'   En aplicaciones Shiny, generalmente se recomienda FALSE.
+#' @param asignar_globalmente Si TRUE, asigna el data.table al entorno global (no recomendado en Shiny).
 #' @param encoding Codificación del archivo (por defecto, "UTF-8").
-#' @param delim Delimitador manual para archivos de texto (NULL para detección automática).
-#' @param ... Argumentos adicionales para read_delim o read_excel.
-#' @return Tibble con los datos cargados o NULL si ocurre un error o el archivo no existe.
-cargar_archivo <- function(nombre_archivo, asignar_globalmente = FALSE, encoding = "UTF-8", delim = NULL, ...) {
+#' @param ... Argumentos adicionales para fread o read_excel.
+#' @return data.table con los datos cargados o NULL si ocurre un error.
+cargar_archivo <- function(nombre_archivo, asignar_globalmente = FALSE, encoding = "UTF-8", ...) {
   ruta_archivo <- here::here(nombre_archivo)
   if (!file.exists(ruta_archivo)) {
     warning("El archivo '", ruta_archivo, "' no existe en el proyecto.")
@@ -28,191 +37,103 @@ cargar_archivo <- function(nombre_archivo, asignar_globalmente = FALSE, encoding
   }
   
   nombre_base <- basename(ruta_archivo)
-  # Generar un nombre de objeto limpio y válido para R
+  # Generar un nombre de objeto limpio
   nombre_objeto <- tools::file_path_sans_ext(nombre_base) %>%
-    stringr::str_replace_all("[^a-zA-Z0-9_]", "_") %>% # Reemplazar caracteres no válidos con guiones bajos
-    stringr::str_replace_all("^_+|_+$", "") %>% # Eliminar guiones bajos al inicio o final
-    { if (stringr::str_detect(., "^[0-9]|^$")) paste0("datos_", .) else . } # Prepend "datos_" si empieza con número o está vacío
-  if (nchar(nombre_objeto) == 0) {
-    nombre_objeto <- "datos_genericos"
-    warning("Nombre de objeto generado inválido. Usando 'datos_genericos'.")
-  }
+    stringr::str_replace_all("[^a-zA-Z0-9_]", "_") %>%
+    stringr::str_replace_all("^_+|_+$", "") %>%
+    { if (stringr::str_detect(., "^[0-9]|^$")) paste0("datos_", .) else . }
+  if (nchar(nombre_objeto) == 0) nombre_objeto <- "datos_genericos"
   
   extension <- tolower(tools::file_ext(ruta_archivo))
   is_excel <- extension %in% c("xls", "xlsx")
   
-  # Función interna para detectar el delimitador de archivos de texto
-  detectar_delimitador <- function(ruta, posibles = c(",", "\t", ";", "|")) {
-    lineas <- readLines(ruta, n = 5, encoding = encoding, warn = FALSE) # Leer las primeras 5 líneas
-    conteos <- sapply(posibles, function(d) sum(stringr::str_count(lineas, stringr::fixed(d))))
-    if (all(conteos == 0)) return(",") # Si no se encuentra ningún delimitador, asumir coma
-    posibles[which.max(conteos)] # Devolver el delimitador más frecuente
-  }
-  
   datos_cargados <- tryCatch({
     if (is_excel) {
-      readxl::read_excel(ruta_archivo, ...)
+      as.data.table(readxl::read_excel(ruta_archivo, ...))
     } else {
-      delim_final <- if (is.null(delim)) detectar_delimitador(ruta_archivo) else delim
-      readr::read_delim(
-        file = ruta_archivo,
-        delim = delim_final,
-        locale = readr::locale(encoding = encoding), # Especificar codificación
-        escape_double = FALSE,
-        trim_ws = TRUE,
-        show_col_types = FALSE, # No mostrar mensajes de tipos de columna
-        ...
-      )
+      fread(file = ruta_archivo, encoding = encoding, sep = "auto", ...)
     }
   }, error = function(e) {
     warning("Error al cargar '", nombre_base, "': ", e$message)
-    NULL # Retornar NULL en caso de error
+    NULL
   })
   
   if (is.null(datos_cargados)) return(NULL)
   
-  datos_tibble <- tibble::as_tibble(datos_cargados) # Convertir a tibble
-  
-  # Asignar al entorno global si se especifica (no recomendado en Shiny)
   if (asignar_globalmente) {
-    assign(nombre_objeto, datos_tibble, envir = .GlobalEnv)
+    assign(nombre_objeto, datos_cargados, envir = .GlobalEnv)
     message("Archivo '", nombre_base, "' cargado como '", nombre_objeto, "'.")
   }
   
-  return(datos_tibble)
+  return(datos_cargados)
 }
 
-#' @title Analizar distribuciones de actividades y regiones
-#' @description Genera gráficos y tablas de distribución para actividades económicas y regiones.
-#' @param datos Un tibble con los datos a analizar.
-#' @param agrupar_ciiu Columna a usar para agrupar las actividades CIIU ("seccion", "division", "actividad").
-#' @param color_ciiu Color para las barras del gráfico CIIU.
-#' @param color_region Color para las barras del gráfico de región.
-#' @param tema_ggplot Tema de ggplot2 a aplicar (e.g., `theme_minimal()`).
-#' @param retorno Tipo de retorno deseado ("graficos", "tablas", "ambos").
-#' @return Una lista conteniendo los gráficos y/o tablas de distribución.
-analizar_distribuciones <- function(datos, agrupar_ciiu = "seccion",
-                                    color_ciiu = "steelblue", color_region = "darkgreen",
-                                    tema_ggplot = theme_minimal(), retorno = "graficos") {
-  
-  # Calcular distribución por CIIU
-  dist_ciiu <- datos %>%
-    dplyr::count(.data[[agrupar_ciiu]]) %>%
-    dplyr::arrange(dplyr::desc(n))
-  
-  # Calcular distribución por Región
-  dist_region <- datos %>%
-    dplyr::count(region) %>%
-    dplyr::arrange(dplyr::desc(n))
-  
-  graficos <- NULL
-  if (retorno %in% c("graficos", "ambos")) {
-    # Gráfico de distribución por CIIU
-    grafico_ciiu <- ggplot2::ggplot(dist_ciiu, ggplot2::aes(x = reorder(.data[[agrupar_ciiu]], -n), y = n)) +
-      ggplot2::geom_bar(stat = "identity", fill = color_ciiu) +
-      tema_ggplot +
-      ggplot2::labs(
-        title = paste("Distribución de Actividades por", ifelse(agrupar_ciiu == "seccion", "Sección", "División/Clase"), "CIIU"),
-        x = ifelse(agrupar_ciiu == "seccion", "Sección CIIU", "División/Clase CIIU"),
-        y = "Número de Empresas"
-      ) +
-      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
-    
-    # Gráfico de distribución por Región
-    grafico_region <- ggplot2::ggplot(dist_region, ggplot2::aes(x = reorder(region, -n), y = n)) +
-      ggplot2::geom_bar(stat = "identity", fill = color_region) +
-      tema_ggplot +
-      ggplot2::labs(
-        title = "Distribución de Empresas por Región",
-        x = "Región",
-        y = "Número de Empresas"
-      ) +
-      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
-    
-    graficos <- list(ciiu = grafico_ciiu, region = grafico_region)
-  }
-  
-  tablas <- list(ciiu = dist_ciiu, region = dist_region)
-  
-  # Retornar según el parámetro 'retorno'
-  if (retorno == "tablas") {
-    list(tablas = tablas)
-  } else if (retorno == "graficos") {
-    list(graficos = graficos)
-  } else { # "ambos"
-    list(graficos = list(ciiu = grafico_ciiu, region = grafico_region),
-         tablas = list(ciiu = dist_ciiu, region = dist_region))
-  }
-}
+# --- Carga de datos inicial (una vez al inicio) ---
+data_sii <- cargar_archivo("Data_SII.txt")
+nivel_act_eco <- cargar_archivo("Nivel_Act_eco.txt")
 
-# --- Carga de datos inicial para la aplicación Shiny ---
-# Los datos se cargan una única vez al inicio de la aplicación.
-# Se usa asignar_globalmente = FALSE ya que Shiny maneja sus propios objetos reactivos.
-data_sii <- cargar_archivo("Data_SII.txt", asignar_globalmente = FALSE)
-nivel_act_eco <- cargar_archivo("Nivel_Act_eco.txt", asignar_globalmente = FALSE)
-
-# Verificar si los archivos se cargaron correctamente
 if (is.null(data_sii) || is.null(nivel_act_eco)) {
-  stop("Error: No se pudieron cargar uno o ambos archivos de datos (Data_SII.txt, Nivel_Act_eco.txt). Asegúrese de que estén en el directorio correcto y que los permisos sean adecuados.")
+  stop("Error: No se pudieron cargar los archivos de datos.")
 }
 
-# Unir las bases para tener las descripciones de CIIU en Data_SII
-# Asumiendo que 'actividad' en Data_SII se corresponde con 'clase' en Nivel_Act_eco
-# y que 'seccion' y 'division' también se pueden unir o usar directamente.
-# Se realiza un left_join para mantener todas las filas de data_sii.
-data_completa <- data_sii %>%
-  left_join(nivel_act_eco, by = c("actividad" = "clase"), suffix = c("", "_desc")) %>%
-  # Coalesce para asegurar que las columnas de descripción (gls_seccion, etc.) no sean NA
-  # si la unión no encuentra una coincidencia, usando el código original como fallback.
-  mutate(
-    gls_seccion = coalesce(gls_seccion, as.character(seccion)),
-    gls_division = coalesce(gls_division, as.character(division)),
-    gls_clase = coalesce(gls_clase, as.character(actividad))
-  )
+# Convertir fechas y pre-join (usando data.table para eficiencia)
+data_sii[, fec_actividao := ymd(fec_actividao)]
+
+# Join eficiente con data.table (clave en 'clase')
+setkey(data_sii, clase)
+setkey(nivel_act_eco, clase)
+data_completa_raw <- nivel_act_eco[data_sii, on = "clase", nomatch = 0]  # Inner join, o usa allow.cartesian=TRUE si grande
+
+# Fallback para descripciones NA
+data_completa_raw[is.na(gls_seccion), gls_seccion := as.character(seccion)]
+data_completa_raw[is.na(gls_division), gls_division := as.character(division)]
+data_completa_raw[is.na(gls_clase), gls_clase := as.character(clase)]
+
+# Regiones únicas para filtro
+unique_regions <- sort(unique(data_completa_raw$region))
 
 # --- Interfaz de Usuario (UI) ---
 ui <- fluidPage(
-  # Título del panel
-  titlePanel("Dashboard de Actividades Económicas del SII"),
-  
-  # Diseño de la página con una barra lateral y un panel principal
+  theme = bslib::bs_theme(version = 4, bootswatch = "flatly"),
+  titlePanel(div(tags$img(src="https://www.sii.cl/mismenu/menu/sii_logo_horizontal.svg", height = "50px", style = "margin-right: 10px;"), "Dashboard de Actividades Económicas del SII")),
   sidebarLayout(
-    # Panel lateral para controles de usuario
     sidebarPanel(
-      h3("Opciones de Visualización"), # Encabezado para las opciones
-      # Selector para elegir cómo agrupar las actividades económicas
-      selectInput("group_by",
-                  "Agrupar Actividades por:",
-                  choices = c("Sección" = "seccion",
-                              "División" = "division",
-                              "Clase" = "actividad")), # 'actividad' en Data_SII es la clase CIIU
-      hr(), # Línea horizontal para separar elementos
-      # Texto de ayuda para el usuario
-      helpText("Este dashboard interactivo muestra la distribución de empresas por actividad económica (según clasificación CIIU) y por región, utilizando datos del Servicio de Impuestos Internos (SII) de Chile.")
+      h3("Opciones de Visualización"),
+      selectInput("group_by", "Agrupar Actividades por:", 
+                  choices = c("Sección (e.g., A - Agricultura)" = "seccion",
+                              "División (2 dígitos)" = "division",
+                              "Clase (4 dígitos)" = "actividad")),
+      dateRangeInput("date_range", "Filtrar por Fecha de Actividad:",
+                     start = min(data_completa_raw$fec_actividao, na.rm = TRUE),
+                     end = max(data_completa_raw$fec_actividao, na.rm = TRUE),
+                     format = "dd/mm/yyyy"),
+      selectizeInput("regions", "Filtrar por Región(es):", choices = unique_regions, multiple = TRUE, selected = unique_regions),
+      helpText("Filtre por fecha y región para analizar la distribución de actividades económicas (CIIU). Para datasets muy grandes (>10M filas), considere pre-agregar datos o usar una base de datos como SQLite.")
     ),
-    
-    # Panel principal para mostrar los resultados (gráficos y tablas)
     mainPanel(
-      # Pestañas para organizar el contenido
       tabsetPanel(
-        # Pestaña para la distribución de actividades económicas
         tabPanel("Actividades Económicas",
                  h4("Distribución por Clasificación CIIU"),
-                 plotlyOutput("ciiu_plot"), # Gráfico interactivo de CIIU
+                 withSpinner(plotlyOutput("ciiu_plot", height = "400px")),
                  h4("Tabla de Distribución CIIU"),
-                 tableOutput("ciiu_table")), # Tabla de distribución CIIU
-        # Pestaña para la distribución regional
+                 withSpinner(DT::dataTableOutput("ciiu_table")),
+                 downloadButton("download_ciiu_table", "Descargar Tabla CIIU")
+        ),
         tabPanel("Distribución Regional",
                  h4("Distribución por Región"),
-                 plotlyOutput("region_plot"), # Gráfico interactivo de región
+                 withSpinner(plotlyOutput("region_plot", height = "400px")),
                  h4("Tabla de Distribución Regional"),
-                 tableOutput("region_table")), # Tabla de distribución regional
-        # Pestaña de información general
+                 withSpinner(DT::dataTableOutput("region_table")),
+                 downloadButton("download_region_table", "Descargar Tabla Regional")
+        ),
+        tabPanel("Tendencias Temporales",
+                 h4("Actividades Económicas a lo Largo del Tiempo"),
+                 withSpinner(plotlyOutput("time_series_plot", height = "400px")),
+                 downloadButton("download_time_series_data", "Descargar Datos Temporales")
+        ),
         tabPanel("Acerca de",
                  h3("Información del Dashboard"),
-                 p("Desarrollado como parte del Examen de Programación en R."),
-                 p("Fuente de Datos: Servicio de Impuestos Internos (SII), Chile."),
-                 p("Última Actualización de Datos: Mayo 2025.")
+                 p("Mejorado para manejar datos grandes con data.table y caching. Fuente: SII Chile. Última actualización: Julio 2025.")
         )
       )
     )
@@ -220,100 +141,77 @@ ui <- fluidPage(
 )
 
 # --- Lógica del Servidor ---
-server <- function(input, output) {
+server <- function(input, output, session) {
   
-  # Renderizar el gráfico interactivo de distribución CIIU
+  # Datos filtrados (con cache para performance)
+  filtered_data <- reactive({
+    validate(need(nrow(data_completa_raw) > 0, "No hay datos disponibles."))
+    data_completa_raw[fec_actividao %between% input$date_range & region %in% input$regions]
+  }) %>% bindCache(input$date_range, input$regions)
+  
+  # Agrupamiento CIIU
+  ciiu_grouped_data <- reactive({
+    grupo <- input$group_by
+    col_agrup <- switch(grupo, "seccion" = "gls_seccion", "division" = "gls_division", "actividad" = "gls_clase", grupo)
+    filtered_data()[, .(Categoria = get(col_agrup), `Número de Empresas` = .N), by = col_agrup][order(-`Número de Empresas`)]
+  }) %>% bindCache(input$group_by, filtered_data())
+  
+  # Agrupamiento Regional
+  region_grouped_data <- reactive({
+    filtered_data()[, .(`Número de Empresas` = .N), by = .(Región = region)][order(-`Número de Empresas`)]
+  }) %>% bindCache(filtered_data())
+  
+  # Datos Temporales (por año)
+  time_series_data <- reactive({
+    filtered_data()[, .(Año = year(fec_actividao), `Número de Empresas` = .N), by = .(Año)][order(Año)]
+  }) %>% bindCache(filtered_data())
+  
+  # Gráfico CIIU
   output$ciiu_plot <- renderPlotly({
-    req(data_completa) # Asegura que data_completa exista antes de intentar renderizar
+    plot_data <- head(ciiu_grouped_data(), 30)
+    plot_data[, Categoria_abrev := substr(Categoria, 1, 30)]
     
-    grupo_seleccionado <- input$group_by # Obtener la selección del usuario
-    
-    # Determinar la columna a usar para el agrupamiento, priorizando las descripciones
-    col_agrupacion <- switch(grupo_seleccionado,
-                             "seccion" = "gls_seccion",
-                             "division" = "gls_division",
-                             "actividad" = "gls_clase")
-    
-    # Fallback: si la columna de descripción no existe (ej. por un error en la unión), usar la columna original
-    if (!(col_agrupacion %in% colnames(data_completa))) {
-      col_agrupacion <- grupo_seleccionado
-      warning(paste("No se encontró la columna de descripción para", grupo_seleccionado, ". Usando la columna original."))
-    }
-    
-    # Calcular la distribución para el gráfico
-    dist_ciiu_plot_data <- data_completa %>%
-      count(.data[[col_agrupacion]]) %>% # Contar ocurrencias por la columna seleccionada
-      arrange(desc(n)) %>% # Ordenar de forma descendente
-      head(30) # Limitar a las 30 categorías más frecuentes para mejor visualización
-    
-    # Crear el gráfico de barras con ggplot2
-    p <- ggplot(dist_ciiu_plot_data, aes(x = reorder(.data[[col_agrupacion]], -n), y = n,
-                                         # Texto para el tooltip de plotly
-                                         text = paste("Categoría:", .data[[col_agrupacion]], "<br>Empresas:", n))) +
-      geom_bar(stat = "identity", fill = "steelblue") + # Barras de identidad con color azul
-      theme_minimal() + # Tema minimalista de ggplot2
-      labs(
-        title = paste("Distribución de Empresas por", names(input$group_by[input$group_by == grupo_seleccionado]), "CIIU"),
-        x = paste(names(input$group_by[input$group_by == grupo_seleccionado]), "CIIU"),
-        y = "Número de Empresas"
-      ) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Rotar etiquetas del eje X
-    
-    ggplotly(p, tooltip = "text") # Convertir a gráfico interactivo con plotly
+    p <- ggplot(plot_data, aes(x = reorder(Categoria_abrev, -`Número de Empresas`), y = `Número de Empresas`, 
+                               text = paste("Categoría:", Categoria, "<br>Empresas:", `Número de Empresas`))) +
+      geom_bar(stat = "identity", fill = "steelblue") + theme_minimal() + 
+      labs(title = paste("Distribución por", input$group_by, "CIIU"), x = input$group_by, y = "Empresas") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    ggplotly(p, tooltip = "text")
   })
   
-  # Renderizar la tabla de distribución CIIU
-  output$ciiu_table <- renderTable({
-    req(data_completa)
-    
-    grupo_seleccionado <- input$group_by
-    col_agrupacion <- switch(grupo_seleccionado,
-                             "seccion" = "gls_seccion",
-                             "division" = "gls_division",
-                             "actividad" = "gls_clase")
-    
-    if (!(col_agrupacion %in% colnames(data_completa))) {
-      col_agrupacion <- grupo_seleccionado
-    }
-    
-    data_completa %>%
-      count(.data[[col_agrupacion]]) %>%
-      arrange(desc(n)) %>%
-      rename(Categoria = 1, `Número de Empresas` = n) # Renombrar columnas para una mejor presentación en la tabla
-  })
+  # Tabla CIIU
+  output$ciiu_table <- DT::renderDataTable(DT::datatable(ciiu_grouped_data(), options = list(pageLength = 10, searching = TRUE), rownames = FALSE))
   
-  # Renderizar el gráfico interactivo de distribución regional
+  output$download_ciiu_table <- downloadHandler(filename = function() {paste("ciiu_", Sys.Date(), ".csv", sep="")}, content = function(file) {fwrite(ciiu_grouped_data(), file)})
+  
+  # Gráfico Regional
   output$region_plot <- renderPlotly({
-    req(data_completa)
-    dist_region_plot_data <- data_completa %>%
-      count(region) %>% # Contar ocurrencias por región
-      arrange(desc(n)) # Ordenar de forma descendente
+    plot_data <- region_grouped_data()
+    plot_data[, Región_abrev := substr(Región, 1, 30)]
     
-    # Crear el gráfico de barras con ggplot2
-    p <- ggplot(dist_region_plot_data, aes(x = reorder(region, -n), y = n,
-                                           # Texto para el tooltip de plotly
-                                           text = paste("Región:", region, "<br>Empresas:", n))) +
-      geom_bar(stat = "identity", fill = "darkgreen") + # Barras de identidad con color verde oscuro
-      theme_minimal() + # Tema minimalista de ggplot2
-      labs(
-        title = "Distribución de Empresas por Región",
-        x = "Región",
-        y = "Número de Empresas"
-      ) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Rotar etiquetas del eje X
-    
-    ggplotly(p, tooltip = "text") # Convertir a gráfico interactivo con plotly
+    p <- ggplot(plot_data, aes(x = reorder(Región_abrev, -`Número de Empresas`), y = `Número de Empresas`, 
+                               text = paste("Región:", Región, "<br>Empresas:", `Número de Empresas`))) +
+      geom_bar(stat = "identity", fill = "darkgreen") + theme_minimal() + 
+      labs(title = "Distribución por Región", x = "Región", y = "Empresas") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    ggplotly(p, tooltip = "text")
   })
   
-  # Renderizar la tabla de distribución regional
-  output$region_table <- renderTable({
-    req(data_completa)
-    data_completa %>%
-      count(region) %>%
-      arrange(desc(n)) %>%
-      rename(Región = region, `Número de Empresas` = n) # Renombrar columnas para una mejor presentación
+  # Tabla Regional
+  output$region_table <- DT::renderDataTable(DT::datatable(region_grouped_data(), options = list(pageLength = 10, searching = TRUE), rownames = FALSE))
+  
+  output$download_region_table <- downloadHandler(filename = function() {paste("regional_", Sys.Date(), ".csv", sep="")}, content = function(file) {fwrite(region_grouped_data(), file)})
+  
+  # Gráfico Temporal
+  output$time_series_plot <- renderPlotly({
+    p <- ggplot(time_series_data(), aes(x = Año, y = `Número de Empresas`, text = paste("Año:", Año, "<br>Empresas:", `Número de Empresas`))) +
+      geom_line(color = "blue") + geom_point(color = "red") + theme_minimal() + 
+      labs(title = "Tendencias de Actividades por Año", x = "Año", y = "Número de Empresas")
+    ggplotly(p, tooltip = "text")
   })
+  
+  output$download_time_series_data <- downloadHandler(filename = function() {paste("temporal_", Sys.Date(), ".csv", sep="")}, content = function(file) {fwrite(time_series_data(), file)})
 }
 
-# Ejecutar la aplicación Shiny
+# Ejecutar la app
 shinyApp(ui = ui, server = server)
