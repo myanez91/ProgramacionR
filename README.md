@@ -1,5 +1,4 @@
-# ProgramacionR
-Curso de programación en R
+# Curso de programación en R
 La Ciencia de Datos está íntimamente ligada al lenguaje de programación R, que permite gestionar grandes volúmenes de datos desde su preparación hasta su transformación y análisis,
 utilizando metodologías específicas de estadística y ciencia de datos. R es un lenguaje colaborativo, enriquecido por aportes de investigadores, y está dedicado a esta disciplina.
 
